@@ -186,7 +186,11 @@
   .prompt-text::-webkit-scrollbar { width: 4px; }
   .prompt-text::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  /* ── 貼り付けエリア ── */
+  /* ── ヒント ── */
+  .hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
+  .hint a { color: var(--accent2); text-decoration: none; }
+
+  /* ── 貼り付けラベル（人格保存用） ── */
   .paste-label { font-size: 11px; letter-spacing: 0.15em; color: var(--accent2); text-transform: uppercase; margin-top: 16px; margin-bottom: 8px; }
   .paste-area {
     background: var(--surface); border: 1px dashed var(--border); border-radius: 8px;
@@ -196,40 +200,6 @@
   }
   .paste-area:focus { border-color: var(--accent); border-style: solid; }
   .paste-area:empty::before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; }
-
-  /* ── フロー ── */
-  .flow { margin-top: 36px; display: flex; flex-direction: column; }
-  .flow-step { position: relative; padding: 20px 0 0; }
-  .flow-step:not(:last-child)::after {
-    content: ''; position: absolute;
-    left: 15px; top: 50px; bottom: -16px;
-    width: 1px; background: var(--border);
-  }
-  .flow-step-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-  .flow-num {
-    width: 30px; height: 30px; border-radius: 50%;
-    border: 1px solid var(--border); background: var(--surface2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; color: var(--text-dim); flex-shrink: 0; transition: all 0.3s;
-  }
-  .flow-step.active .flow-num { border-color: var(--accent2); color: var(--accent2); box-shadow: 0 0 0 3px rgba(61,184,184,0.12); }
-  .flow-step.done .flow-num { border-color: var(--success); color: var(--success); background: rgba(61,184,138,0.1); }
-  .flow-step-title { font-size: 13px; color: var(--text-dim); }
-  .flow-step.active .flow-step-title,
-  .flow-step.done .flow-step-title { color: var(--text); }
-  .flow-content { margin-left: 44px; padding-bottom: 20px; }
-
-  /* ── ヒント ── */
-  .hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
-  .hint a { color: var(--accent2); text-decoration: none; }
-
-  /* ── 結果 ── */
-  .result-article {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    padding: 28px; font-size: 15px; line-height: 2; color: #d0e0e8;
-    white-space: pre-wrap; word-break: break-all;
-  }
-  .result-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 
   /* ── エラー ── */
   .error-msg {
@@ -352,46 +322,16 @@
     <button class="btn-main" onclick="generateStep2()">記事生成プロンプトを生成</button>
     <div id="errorGenerate" class="error-msg"></div>
 
-    <!-- 記事生成フロー -->
-    <div class="flow" id="generateFlow" style="display:none">
-      <div class="flow-step active" id="genFlowStep1">
-        <div class="flow-step-header">
-          <div class="flow-num">2</div>
-          <div class="flow-step-title">記事生成プロンプト → Claude に貼る</div>
+    <!-- 記事生成プロンプト -->
+    <div id="generatePromptBox" style="display:none">
+      <div class="prompt-box">
+        <div class="prompt-topbar">
+          <span class="prompt-badge-label">Prompt · 記事生成</span>
+          <button class="btn-copy-prompt" onclick="copyPrompt('prompt2Text', this)">コピー</button>
         </div>
-        <div class="flow-content">
-          <div class="prompt-box">
-            <div class="prompt-topbar">
-              <span class="prompt-badge-label">Prompt · Step 2</span>
-              <button class="btn-copy-prompt" onclick="copyPrompt('prompt2Text', this)">コピー</button>
-            </div>
-            <div class="prompt-text" id="prompt2Text"></div>
-          </div>
-          <p class="hint">↑ コピーして <a href="https://claude.ai" target="_blank">新しいチャット</a> に貼り、生成された記事を下に貼ってください。</p>
-
-          <div class="paste-label">完成記事を貼る</div>
-          <div class="paste-area" id="pasteArticle" contenteditable="true"
-               data-placeholder="Claudeが生成した記事をここに貼り付け…"></div>
-
-          <button class="btn-main" onclick="finalizeArticle()">記事を確認する</button>
-          <div id="errorArticle" class="error-msg"></div>
-        </div>
+        <div class="prompt-text" id="prompt2Text"></div>
       </div>
-
-      <!-- 結果 -->
-      <div class="flow-step hidden" id="genFlowStep2">
-        <div class="flow-step-header">
-          <div class="flow-num">✓</div>
-          <div class="flow-step-title">完成</div>
-        </div>
-        <div class="flow-content">
-          <div class="result-article" id="resultArticle"></div>
-          <div class="result-actions">
-            <button class="btn-sub" onclick="copyFinal(this)">テキストをコピー</button>
-            <button class="btn-sub" onclick="generateAnother()">別テーマで書く</button>
-          </div>
-        </div>
-      </div>
+      <p class="hint">↑ コピーして <a href="https://claude.ai" target="_blank">Claude.ai</a> に貼るだけでOK。別テーマで書くときはそのまま上のフォームを変えて再生成できます。</p>
     </div>
 
   </div><!-- /generateArea -->
@@ -559,37 +499,8 @@ ${persona}
 - 記事のみ出力（前置き・説明・後書き不要）`;
 
   document.getElementById('prompt2Text').textContent = prompt;
-  // 貼り付けエリアをリセット
-  document.getElementById('pasteArticle').innerText = '';
-  document.getElementById('genFlowStep2').classList.add('hidden');
-  document.getElementById('genFlowStep1').classList.remove('done');
-  document.getElementById('genFlowStep1').classList.add('active');
-  document.getElementById('generateFlow').style.display = 'block';
-  document.getElementById('generateFlow').scrollIntoView({ behavior: 'smooth' });
-}
-
-// ══════════════════════════════════════
-// 記事確定
-// ══════════════════════════════════════
-function finalizeArticle() {
-  clearErr('errorArticle');
-  const article = document.getElementById('pasteArticle').innerText.trim();
-  if (article.length < 50) return showErr('errorArticle', 'Claudeが生成した記事を貼り付けてください。');
-
-  document.getElementById('resultArticle').textContent = article;
-  document.getElementById('genFlowStep1').classList.remove('active');
-  document.getElementById('genFlowStep1').classList.add('done');
-  document.getElementById('genFlowStep2').classList.remove('hidden');
-  document.getElementById('genFlowStep2').classList.add('active');
-  document.getElementById('genFlowStep2').scrollIntoView({ behavior: 'smooth' });
-}
-
-// 別テーマで書く
-function generateAnother() {
-  document.getElementById('themeInput').value = '';
-  document.getElementById('generateFlow').style.display = 'none';
-  document.getElementById('themeInput').focus();
-  window.scrollTo({ top: document.getElementById('generateArea').offsetTop - 20, behavior: 'smooth' });
+  document.getElementById('generatePromptBox').style.display = 'block';
+  document.getElementById('generatePromptBox').scrollIntoView({ behavior: 'smooth' });
 }
 
 // ══════════════════════════════════════
@@ -600,13 +511,6 @@ function copyPrompt(id, btn) {
     const orig = btn.textContent;
     btn.textContent = 'コピーしました ✓';
     setTimeout(() => { btn.textContent = orig; }, 2000);
-  });
-}
-
-function copyFinal(btn) {
-  navigator.clipboard.writeText(document.getElementById('resultArticle').textContent).then(() => {
-    btn.textContent = 'コピーしました ✓';
-    setTimeout(() => { btn.textContent = 'テキストをコピー'; }, 2000);
   });
 }
 
